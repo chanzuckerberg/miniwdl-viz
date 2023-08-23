@@ -25,31 +25,32 @@ def make_id_mapping(edges):
 
 
 def group_edges(edges, suppress_workflow_input=False):
-    """Groups edges that start and end from the same nodes together. 
-        Could probably replace with pandas or something cleaner
+    """Groups edges that start and end from the same nodes together.
+    Could probably replace with pandas or something cleaner
     """
     smol_graph = {}
     for edge in edges:
         if suppress_workflow_input and edge["node_from"] == "WorkflowInput":
-            # Sometimes it's hard to see the graph with the WorkflowInput variables 
+            # Sometimes it's hard to see the graph with the WorkflowInput variables
             # so suppress the outputs
             continue
         if smol_graph.get(
             (edge["node_from"], edge["node_to"], edge["edge_type"]), None
         ):
-            # if there is already an edge with the same nodes, 
+            # if there is already an edge with the same nodes,
             # then just append the task name at the end
-            smol_graph[
-                (edge["node_from"], edge["node_to"], edge["edge_type"])
-            ] = list(set(
-                smol_graph[(edge["node_from"], edge["node_to"], edge["edge_type"])] + 
-                [edge["task_name"]]
-                ))
+            smol_graph[(edge["node_from"], edge["node_to"], edge["edge_type"])] = list(
+                set(
+                    smol_graph[(edge["node_from"], edge["node_to"], edge["edge_type"])]
+                    + [edge["task_name"]]
+                )
+            )
         else:
-            smol_graph[(edge["node_from"], edge["node_to"], edge["edge_type"])] = [edge[
-                "task_name"
-            ]]
+            smol_graph[(edge["node_from"], edge["node_to"], edge["edge_type"])] = [
+                edge["task_name"]
+            ]
     return smol_graph
+
 
 def create_mermaid_list(id_mapping, smol_graph):
     output = ["flowchart TD"]  # mermaid header and name
@@ -58,22 +59,23 @@ def create_mermaid_list(id_mapping, smol_graph):
         inputs = inputs.replace('"', "")  # replace some string breaking stuff
         if node[2] == "input":
             output.append(
-                f"{id_mapping[node[0]]}{{{node[0]}}} --> |{inputs}|{id_mapping[node[1]]}{{{node[1]}}}"
+                f"{id_mapping.get(node[0], '???')}{{{node[0]}}} --> |{inputs}|{id_mapping.get(node[1], '???')}{{{node[1]}}}"
             )
         elif node[2] == "cond":
             output.append(
-                f"{id_mapping[node[0]]}[{node[0]}] --> |{inputs}| {id_mapping[node[1]]}{{{node[1]}}}" 
+                f"{id_mapping.get(node[0], '???')}[{node[0]}] --> |{inputs}| {id_mapping.get(node[1], '???')}{{{node[1]}}}"
             )
         elif node[2] == "decl_from":
             output.append(
-                f"{id_mapping[node[0]]}(({node[0]})) --> |{inputs}| {id_mapping[node[1]]}{{{node[1]}}}"
+                f"{id_mapping.get(node[0], '???')}(({node[0]})) --> |{inputs}| {id_mapping.get(node[1], '???')}{{{node[1]}}}"
             )
         elif node[2] == "decl_to":
             output.append(
-                f"{id_mapping[node[0]]}{{{node[0]}}} --> |{inputs}| {id_mapping[node[1]]}(({node[1]}))"
+                f"{id_mapping.get(node[0], '???')}{{{node[0]}}} --> |{inputs}| {id_mapping.get(node[1], '???')}(({node[1]}))"
             )
     return output
-    
+
+
 def print_mermaid_list(mermaid):
     for ind, row in enumerate(mermaid):
         if ind == 0:
@@ -87,7 +89,7 @@ def main(doc):
     parser = MiniWDLParser(doc)
     parser.parse()
     id_mapping = make_id_mapping(parser.edges)
-    smol_graph = group_edges(parser.edges, suppress_workflow_input=False)
+    smol_graph = group_edges(parser.edges, suppress_workflow_input=True)
     mermaid_list = create_mermaid_list(id_mapping, smol_graph)
     print_mermaid_list(mermaid_list)
 
