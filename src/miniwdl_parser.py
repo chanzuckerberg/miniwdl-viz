@@ -5,15 +5,23 @@ SELECT_ALL = "select_all"
 SELECT_FIRST = "select_first"
 DEFINED = "defined"
 FLATTEN = "flatten"
+LENGTH = "length"
+FLOOR = "floor"
+DIV = "_div"
+AT = "_at"
+READ_LINES = "read_lines"
 GLOB = "glob"
+
+function_map = {"_eqeq": " == ", "_neq": " != ", "_land": " && ", "_lte": " <= "}
 
 
 class MiniWDLParser:
     """
-    
+
     TODO: Support function declarations (eg. select_first)
     TODO: add edges in the items
     """
+
     def __init__(self, wdl_doc):
         self.wdl_doc = wdl_doc
         self.edges = []
@@ -29,11 +37,14 @@ class MiniWDLParser:
         """
         if isinstance(task, WDL.Tree.Call):
             return self.read_call_task(task)
-        elif isinstance(task, WDL.Tree.Conditional):
+        elif isinstance(task, WDL.Tree.Conditional) or isinstance(
+            task, WDL.Tree.Scatter
+        ):
             return self.read_conditional_task(task)
         elif isinstance(task, WDL.Tree.Decl):
             return self.read_declaration_task(task)
         else:
+            breakpoint()
             raise Exception(f"Unsupported workflow task type")
 
     ###################
@@ -68,16 +79,29 @@ class MiniWDLParser:
         decl = {"name": declaration.name, "inputs": [], "type": type(declaration)}
 
         expression = declaration.expr
-        if type(expression) == WDL.Expr.IfThenElse:
-            parsed_expression = []
+        parsed_expression = []
+        if expression is None:
+            """If input declaration is outside of the input section
+            (not recommended)
+            """
+            return [decl]
+        elif type(expression) == WDL.Expr.IfThenElse:
             parsed_expression.extend(self.parse_input_item(expression.consequent))
             parsed_expression.extend(self.parse_input_item(expression.alternative))
             # declaration name is the name of the variable being declared
             self.declarations[declaration.name] = "if_then_else"
             decl["inputs"] = parsed_expression
         else:
-            parsed_expression = self.parse_input_item(expression)
-            self.declarations[declaration.name] = str(expression.function_name)
+            if hasattr(expression, "function_name"):
+                parsed_expression = self.parse_input_item(expression)
+                operator = function_map.get(expression.function_name, "")
+                expression_name = operator.join(
+                    [
+                        re.sub('\(|\)|"', "_", str(argument))
+                        for argument in expression.arguments
+                    ]
+                )
+                self.declarations[declaration.name] = str(expression_name)
 
         for reference_string in parsed_expression:
             output_from, output_var, intype = self.create_node_variables(
@@ -135,10 +159,19 @@ class MiniWDLParser:
         elif isinstance(reference, WDL.Expr.IfThenElse):
             return self.parse_if_then_else_expression(reference)
         elif isinstance(
-            reference, (WDL.Expr.String, WDL.Expr.Int, WDL.Expr.Float, WDL.Expr.Boolean, WDL.Expr.Null)
+            reference,
+            (
+                WDL.Expr.Ident,
+                WDL.Expr.String,
+                WDL.Expr.Int,
+                WDL.Expr.Float,
+                WDL.Expr.Boolean,
+                WDL.Expr.Null,
+            ),
         ):
             # TODO: add hard-coded constants to edges
             return [str(reference)]  # ignore hard-coded constants
+        breakpoint()
 
         raise Exception(f"Unsupported input item: {reference}")
 
@@ -157,10 +190,10 @@ class MiniWDLParser:
 
     def parse_apply_expression(self, apply_exp):
         function_name = str(apply_exp.function_name)
-        if function_name in [SELECT_ALL, SELECT_FIRST, FLATTEN]:
-            return self.parse_array_expression(apply_exp.arguments[0])
-        elif function_name == DEFINED:
+        if function_name == DEFINED:
             return []
+        else:
+            return self.parse_array_expression(apply_exp.arguments[0])
 
     def parse_array_expression(self, array_exp):
         items = []
@@ -173,18 +206,11 @@ class MiniWDLParser:
         # Try to add function to `parse_input_item`
         if type(expr) == WDL.Expr.Get:
             return ",".join(self.parse_input_item(expr))
-        if expr.function_name == "_eqeq":
-            operator = " == "
-        elif expr.function_name == "_neq":
-            operator = " != "
-        elif expr.function_name == "_land":
-            operator = " && " 
-        
-        else:
-            operator = ""
+
+        operator = function_map.get(expr.function_name, "")
 
         return operator.join(
-            [re.sub('\(|\)|"', '_', str(argument)) for argument in expr.arguments]
+            [re.sub('\(|\)|"', "_", str(argument)) for argument in expr.arguments]
         )
 
     ######################
@@ -192,6 +218,9 @@ class MiniWDLParser:
     ######################
 
     def create_node_variables(self, reference_string, intype="input"):
+        if reference_string.startswith('"') and reference_string.endswith('"'):
+            return "HardcodedInput", reference_string, intype
+
         expression_components = reference_string.split(".")
 
         if (
@@ -201,7 +230,12 @@ class MiniWDLParser:
         elif self.declarations.get(
             reference_string, None
         ):  # If the variable is a declaration
-            return self.declarations[reference_string], reference_string, "decl_from"
+            # breakpoint()
+            return (
+                self.declarations[reference_string],
+                str(reference_string),
+                "decl_from",
+            )
         else:
             return "WorkflowInput", reference_string, intype
 
