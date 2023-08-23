@@ -1,0 +1,13 @@
+# Exclude WDL
+wdl/*
+
+# Exclude generated diagrams
+*.svg
+*.mmd
+
+# Exclude pycache
+__pycache__
+
+# Exclude ipynb_checkpoints
+.ipynb_checkpoints
+
