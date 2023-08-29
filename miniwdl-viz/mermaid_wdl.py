@@ -1,46 +1,14 @@
 import sys
-import os 
+import os
 import subprocess
 import WDL
-
+from mermaid_node import (
+    MermaidCallNode,
+    MermaidDeclNode,
+    MermaidInputNode,
+    MermaidSubgraphNode,
+)
 from miniwdl_parser2 import MiniWDLParser2
-
-
-class MermaidNode:
-    def __init__(self, id, name):
-        self.open, self.close = self.set_parens()
-        self.id = self.clean_string(id)
-        self.name = self.clean_string(name)
-
-    def set_parens(self):
-        return None, None
-
-    def __str__(self):
-        return f'{self.id}{self.open}"{self.name}"{self.close}'
-
-    @staticmethod
-    def clean_string(text):
-        return text.replace('"', "'")
-
-
-class MermaidInputNode(MermaidNode):
-    def set_parens(self):
-        return "((", "))"
-
-
-class MermaidCallNode(MermaidNode):
-    def set_parens(self):
-        return "{{", "}}"
-
-
-class MermaidDeclNode(MermaidNode):
-    def set_parens(self):
-        return ">", "]"
-
-
-class MermaidSubgraphNode(MermaidNode):
-    def set_parens(self):
-        return "[", "]"
 
 
 class MermaidWDL:
@@ -52,7 +20,7 @@ class MermaidWDL:
         suppress_hardcoded_variables=True,
         flowchart_dir="TD",
         max_input_str_length=200,
-        output_name="output.md"
+        output_name="output.md",
     ):
         self.group_edges = group_edges
         self.hide_input_names = hide_input_names
@@ -72,18 +40,20 @@ class MermaidWDL:
     def group_edge(self, edges):
         grouped = {}
         seen = set()
-        
+
         for edge in edges:
             edge_id_tuple = (edge["node_from"], edge["node_to"])
             seen_tuple = (*edge_id_tuple, edge["task_ref_name"])
-            
+
             if edge_id_tuple in grouped:
                 if seen_tuple not in seen:
-                    grouped[edge_id_tuple]["task_ref_name"] += f", {edge['task_ref_name']}"
+                    grouped[edge_id_tuple][
+                        "task_ref_name"
+                    ] += f", {edge['task_ref_name']}"
             else:
                 grouped[edge_id_tuple] = edge
             seen.add(seen_tuple)
-        
+
         return list(grouped.values())
 
     def get_node(self, nodes, node_name):
@@ -154,11 +124,11 @@ class MermaidWDL:
                     output.write(f"{row}\n")
                 else:
                     output.write(f"    {row}\n")
-    
+
     def create_mermaid_diagram(self):
         output_image = self.output_name.rsplit(".", 1)[0] + ".svg"
 
-        # mermaid command. depends on downloading the mermaid-cli 
+        # mermaid command. depends on downloading the mermaid-cli
         command = f"mmdc -i {self.output_name} -o {output_image}"
 
         try:
@@ -167,31 +137,33 @@ class MermaidWDL:
                 shell=True,
                 text=True,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
 
         except subprocess.CalledProcessError as e:
             print(f"Command execution failed with return code {e.returncode}")
 
 
-
-
-def main(doc, output_file = "output.md"):
-    output_file_md = output_file.lstrip("./").replace("/", "_").rsplit(".", 1)[0] + ".mmd"
+def main(doc, output_file="output.md"):
+    output_file_md = (
+        output_file.lstrip("./").replace("/", "_").rsplit(".", 1)[0] + ".mmd"
+    )
     parser = MiniWDLParser2(doc)
     parser.parse()
 
     # Check if the only nodes remaining are WorkflowInput and HardcodedVariable
-    remaining = set([edge["node_from"] for edge in parser.edges]) - {"WorkflowInput", "HardcodedVariable"}
-
+    remaining = set([edge["node_from"] for edge in parser.edges]) - {
+        "WorkflowInput",
+        "HardcodedVariable",
+    }
 
     mw = MermaidWDL(
         flowchart_dir="LR",
-        suppress_workflow_input=len(remaining)>0, 
+        suppress_workflow_input=len(remaining) > 0,
         suppress_hardcoded_variables=True,
-        max_input_str_length=50, 
-        hide_input_names=True, 
-        output_name=output_file_md
+        max_input_str_length=50,
+        hide_input_names=True,
+        output_name=output_file_md,
     )
     mw.create_mermaid_flowchart(parser.nodes, parser.edges)
     mw.create_mermaid_diagram()
