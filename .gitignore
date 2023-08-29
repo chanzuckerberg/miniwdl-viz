@@ -11,3 +11,9 @@ __pycache__
 # Exclude ipynb_checkpoints
 .ipynb_checkpoints
 
+# Exclude vscode
+.vscode
+
+# Exclude macOS kludge
+*.DS_Store
+
