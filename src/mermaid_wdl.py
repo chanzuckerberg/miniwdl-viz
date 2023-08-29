@@ -158,10 +158,9 @@ class MermaidWDL:
     def create_mermaid_diagram(self):
         output_image = self.output_name.rsplit(".", 1)[0] + ".svg"
 
-        # Define the command you want to run
+        # mermaid command. depends on downloading the mermaid-cli 
         command = f"mmdc -i {self.output_name} -o {output_image}"
 
-        # Run the command and capture the output and error streams
         try:
             completed_process = subprocess.run(
                 command,
