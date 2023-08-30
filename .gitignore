@@ -17,3 +17,7 @@ __pycache__
 # Exclude macOS kludge
 *.DS_Store
 
+# Exclude python package installation
+*.egg-info/
+*.egg
+
