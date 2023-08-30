@@ -4,9 +4,7 @@ import WDL
 
 
 class MiniWDLParser2:
-    """
-
-    """
+    """ """
 
     def __init__(self, wdl_doc):
         self.wdl_doc = wdl_doc

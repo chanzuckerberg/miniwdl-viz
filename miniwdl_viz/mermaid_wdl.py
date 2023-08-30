@@ -2,16 +2,11 @@ import sys
 import os
 import subprocess
 import WDL
-from miniwdl_viz.mermaid_node import (
-    MermaidCallNode,
-    MermaidDeclNode,
-    MermaidInputNode,
-    MermaidSubgraphNode,
-)
+from miniwdl_viz.py_mermaid import PyMermaid
 from miniwdl_viz.miniwdl_parser2 import MiniWDLParser2
 
 
-class MermaidWDL:
+class ParsedWDLToMermaid:
     def __init__(
         self,
         group_edges=True,
@@ -23,12 +18,15 @@ class MermaidWDL:
         output_name="output.mmd",
     ):
         self.group_edges = group_edges
-        self.hide_input_names = hide_input_names
         self.suppress_workflow_input = suppress_workflow_input
         self.suppress_hardcoded_variables = suppress_hardcoded_variables
-        self.flowchart_dir = flowchart_dir
-        self.max_input_str_length = max_input_str_length
         self.output_name = output_name
+
+        self.py_mermaid = PyMermaid(
+            hide_input_names=hide_input_names,
+            max_length_input_names=max_input_str_length,
+            flowchart_dir=flowchart_dir,
+        )
 
     def suppress_node(self, node):
         if self.suppress_workflow_input and node["name"] == "WorkflowInput":
@@ -64,46 +62,21 @@ class MermaidWDL:
             assert len(nodes_matching) == 1
             return nodes_matching[0]
 
-    def create_mm_node(self, node):
-        if node.get("type") == "input":
-            return str(MermaidInputNode(node.get("id"), node.get("name")))
-        elif node.get("type") == "decl":
-            return str(MermaidDeclNode(node.get("id"), node.get("name")))
-        elif node.get("type") == "call":
-            return str(MermaidCallNode(node.get("id"), node.get("name")))
-        elif node.get("type") == "workflow_section":
-            return str(node.get("id"))
-
-    def create_arrow(self):
-        return "-->"
-
-    def create_arrow_text(self, text):
-        if self.hide_input_names:
-            return ""
-        if len(text) > self.max_input_str_length:
-            text = text[: self.max_input_str_length] + "..."
-        return f"|{text}|"
-
-    def add_mermaid_edge(self, mermaid_list, nodes, edge):
+    def add_mermaid_edge(self, nodes, edge):
         node_from = self.get_node(nodes, edge["node_from"])
         node_to = self.get_node(nodes, edge["node_to"])
         if not self.suppress_node(node_from):
-            mermaid_list.append(
-                f"{self.create_mm_node(node_from)} {self.create_arrow()} {self.create_arrow_text(edge['task_ref_name'])} {self.create_mm_node(node_to)}"
-            )
+            self.py_mermaid.add_mermaid_edge(node_from, node_to, edge)
 
-    def create_subgraphs(self, mermaid_list, nodes):
+    def create_subgraphs(self, nodes):
         for node in nodes:
             if node["type"] == "workflow_section":
                 nodes_in_subgraph = [
                     sg_node for sg_node in nodes if sg_node["section"] == node["id"]
                 ]
-                mermaid_list.append(
-                    f"subgraph {str(MermaidSubgraphNode(node.get('id'), node.get('name')))}"
+                self.py_mermaid.add_subgraph(
+                    node.get("id"), node.get("name"), nodes_in_subgraph
                 )
-                for subgraph_node in nodes_in_subgraph:
-                    mermaid_list.append(f"{self.create_mm_node(subgraph_node)}")
-                mermaid_list.append("end")
 
     def create_mermaid_flowchart(self, nodes, edges):
         if self.group_edges:
@@ -111,15 +84,12 @@ class MermaidWDL:
         else:
             edge_map = edges
 
-        mermaid_list = [f"flowchart {self.flowchart_dir}"]
-
-        self.create_subgraphs(mermaid_list, nodes)
+        self.create_subgraphs(nodes)
 
         for edge in edge_map:
-            self.add_mermaid_edge(mermaid_list, nodes, edge)
+            self.add_mermaid_edge(nodes, edge)
 
-        return mermaid_list
-        
+        return self.py_mermaid.mermaid_list
 
     def output_mermaid(self, mermaid_list):
         with open(self.output_name, "w") as output:
@@ -128,6 +98,7 @@ class MermaidWDL:
                     output.write(f"{row}\n")
                 else:
                     output.write(f"    {row}\n")
+
     def create_mermaid_diagram(self):
         output_image = self.output_name.rsplit(".", 1)[0] + ".svg"
 
@@ -160,7 +131,7 @@ def main(doc, output_file="output.md"):
         "HardcodedVariable",
     }
 
-    mw = MermaidWDL(
+    mw = ParsedWDLToMermaid(
         flowchart_dir="LR",
         suppress_workflow_input=len(remaining) > 0,
         suppress_hardcoded_variables=True,
