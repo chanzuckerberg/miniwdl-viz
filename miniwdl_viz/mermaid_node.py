@@ -9,6 +9,9 @@ class MermaidNode:
 
     def __str__(self):
         return f'{self.id}{self.open}"{self.name}"{self.close}'
+    
+    def __repr__(self):
+        return f'{self.id}{self.open}"{self.name}"{self.close}'
 
     @staticmethod
     def clean_string(text):

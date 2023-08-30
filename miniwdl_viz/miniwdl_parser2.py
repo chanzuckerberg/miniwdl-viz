@@ -6,8 +6,6 @@ import WDL
 class MiniWDLParser2:
     """
 
-    TODO: Support function declarations (eg. select_first)
-    TODO: add edges in the items
     """
 
     def __init__(self, wdl_doc):
@@ -64,11 +62,11 @@ class MiniWDLParser2:
         )
         nodes.append({"id": id, "name": name, "section": section, "type": type})
 
-    def trace_identifiers(self, wdl_doc, nodes, edges):
+    def parse_workflow(self, wdl_doc, nodes, edges):
         if isinstance(wdl_doc, WDL.Workflow):
             self.parse_inputs(wdl_doc.inputs)
             for task in wdl_doc.body:
-                self.trace_identifiers(task, nodes, edges)
+                self.parse_workflow(task, nodes, edges)
             self.parse_outputs(wdl_doc.outputs)
 
         elif isinstance(wdl_doc, WDL.Call):
@@ -102,7 +100,7 @@ class MiniWDLParser2:
                 type="workflow_section",
             )
             for task in wdl_doc.body:
-                self.trace_identifiers(task, nodes, edges)
+                self.parse_workflow(task, nodes, edges)
 
         elif isinstance(wdl_doc, WDL.Decl):
             if wdl_doc.expr:
@@ -138,7 +136,7 @@ class MiniWDLParser2:
         return string
 
     def parse(self):
-        self.trace_identifiers(self.wdl_doc.workflow, self.nodes, self.edges)
+        self.parse_workflow(self.wdl_doc.workflow, self.nodes, self.edges)
 
         for node in self.nodes:
             print(node)
@@ -147,12 +145,12 @@ class MiniWDLParser2:
             print(edge)
 
 
-def main(doc):
+def main():
+    input_file = sys.argv[1]
+    doc = WDL.load(uri=input_file)
     parser = MiniWDLParser2(doc)
     parser.parse()
 
 
 if __name__ == "__main__":
-    input_file = sys.argv[1]
-    doc = WDL.load(uri=input_file)
-    main(doc)
+    main()
