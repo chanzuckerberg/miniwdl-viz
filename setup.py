@@ -23,6 +23,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
+            "miniwdl_parser = miniwdl_viz.miniwdl_parser2:main"
         ],
     },
     packages=["miniwdl_viz"],
