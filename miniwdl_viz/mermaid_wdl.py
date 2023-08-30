@@ -2,13 +2,13 @@ import sys
 import os
 import subprocess
 import WDL
-from mermaid_node import (
+from miniwdl_viz.mermaid_node import (
     MermaidCallNode,
     MermaidDeclNode,
     MermaidInputNode,
     MermaidSubgraphNode,
 )
-from miniwdl_parser2 import MiniWDLParser2
+from miniwdl_viz.miniwdl_parser2 import MiniWDLParser2
 
 
 class MermaidWDL:
@@ -20,7 +20,7 @@ class MermaidWDL:
         suppress_hardcoded_variables=True,
         flowchart_dir="TD",
         max_input_str_length=200,
-        output_name="output.md",
+        output_name="output.mmd",
     ):
         self.group_edges = group_edges
         self.hide_input_names = hide_input_names
@@ -118,13 +118,16 @@ class MermaidWDL:
         for edge in edge_map:
             self.add_mermaid_edge(mermaid_list, nodes, edge)
 
+        return mermaid_list
+        
+
+    def output_mermaid(self, mermaid_list):
         with open(self.output_name, "w") as output:
             for ind, row in enumerate(mermaid_list):
                 if ind == 0:
                     output.write(f"{row}\n")
                 else:
                     output.write(f"    {row}\n")
-
     def create_mermaid_diagram(self):
         output_image = self.output_name.rsplit(".", 1)[0] + ".svg"
 
@@ -162,10 +165,11 @@ def main(doc, output_file="output.md"):
         suppress_workflow_input=len(remaining) > 0,
         suppress_hardcoded_variables=True,
         max_input_str_length=50,
-        hide_input_names=True,
+        hide_input_names=False,
         output_name=output_file_md,
     )
-    mw.create_mermaid_flowchart(parser.nodes, parser.edges)
+    mermaid_list = mw.create_mermaid_flowchart(parser.nodes, parser.edges)
+    mw.output_mermaid(mermaid_list)
     mw.create_mermaid_diagram()
 
 
