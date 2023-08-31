@@ -17,18 +17,18 @@ class TestMermaidWDL:
         mermaid_list = mw.create_mermaid_flowchart(simple_wdl.workflow_name, simple_wdl.nodes, simple_wdl.edges)
         assert (
             mermaid_list[1]
-            == 'WorkflowInput(("WorkflowInput")) --> |input_file, docker_image_id| call-add_world{{"add_world"}}'
+            == 'call-add_world{{"add_world"}}'
         )
         assert (
-            mermaid_list[2]
-            == 'call-add_world{{"add_world"}} --> |input_file| call-add_goodbye{{"add_goodbye"}}'
+            mermaid_list[-1]
+            == 'WorkflowInput --> |docker_image_id| call-add_farewell'
         )
 
         mw.output_mermaid(mermaid_list)
         with open(output_filename, "r") as f:
             file = f.read()
         hash = hashlib.md5(file.encode())
-        assert hash.hexdigest() == "5447602150e9b75914b5fad0da96bf09"
+        assert hash.hexdigest() == "a242eae2f3dcf7c5f65610fafdbcf306"
         os.remove(output_filename)
 
     def test_complex_mermaid_wdl(self, complex_wdl):
@@ -42,16 +42,16 @@ class TestMermaidWDL:
         mermaid_list = mw.create_mermaid_flowchart(complex_wdl.workflow_name, complex_wdl.nodes, complex_wdl.edges)
         assert (
             mermaid_list[1]
-            == 'subgraph scatter-L120C3-idx["range(length(unpadded_intervals))"]'
+            == 'call-DynamicallyCombineIntervals{{"DynamicallyCombineIntervals"}}'
         )
         assert (
             mermaid_list[-1]
-            == 'WorkflowInput(("WorkflowInput")) --> |output_prefix, disk_size, docker, gatk_path| call-GatherMetrics{{"GatherMetrics"}}'
+            == 'WorkflowInput --> |output_prefix, disk_size, docker, gatk_path| call-GatherMetrics'
         )
 
         mw.output_mermaid(mermaid_list)
         with open(output_filename, "r") as f:
             file = f.read()
         hash = hashlib.md5(file.encode())
-        assert hash.hexdigest() == "70d17c20397b15e1ddc0b360ec98fa5c"
+        assert hash.hexdigest() == "67e6954ef9e416431b197b7428ce1a1a"
         os.remove(output_filename)
