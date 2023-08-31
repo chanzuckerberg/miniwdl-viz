@@ -8,12 +8,18 @@ from miniwdl_viz.mermaid_node import (
 
 class PyMermaid:
     def __init__(
-        self, hide_input_names=False, max_length_input_names=200, flowchart_dir="TD"
+        self,
+        hide_input_names=False,
+        max_length_input_names=200,
+        flowchart_dir="TD",
+        style_classes="classDef done fill:#f96",
     ):
         self.hide_input_names = hide_input_names
         self.max_length_input_names = max_length_input_names
         self.flowchart_dir = flowchart_dir
+        self.node_tracking = {}
         self.mermaid_list = [f"flowchart {self.flowchart_dir}"]
+        self.mermaid_list.append(style_classes)
 
     def create_arrow(self):
         return "-->"
@@ -39,6 +45,7 @@ class PyMermaid:
         self.mermaid_list.append(
             f"{self.create_mm_node(node_from)} {self.create_arrow()} {self.create_arrow_text(edge['task_ref_name'])} {self.create_mm_node(node_to)}"
         )
+
     def add_mermaid_edge_id(self, id_from, id_to, edge):
         self.mermaid_list.append(
             f"{id_from} {self.create_arrow()} {self.create_arrow_text(edge['task_ref_name'])} {id_to}"
@@ -47,10 +54,16 @@ class PyMermaid:
     def add_subgraph(self, id, name, subgraph_nodes):
         self.mermaid_list.append(f"subgraph {MermaidSubgraphNode(id, name)}")
         for subgraph_node in subgraph_nodes:
-            self.mermaid_list.append(f"{self.create_mm_node(subgraph_node)}")
+            self.add_node(subgraph_node)
         self.mermaid_list.append("end")
-    
+
+    def set_node_class(self, node_id, node_class="done"):
+        node_ind = self.node_tracking.get(node_id)
+        if not node_ind:
+            return
+
+        self.mermaid_list[node_ind] = f"{self.mermaid_list[node_ind]}:::{node_class}"
+
     def add_node(self, node):
-        self.mermaid_list.append(
-            f"{self.create_mm_node(node)}"
-        )
+        self.node_tracking[node["id"]] = len(self.mermaid_list)
+        self.mermaid_list.append(f"{self.create_mm_node(node)}")
