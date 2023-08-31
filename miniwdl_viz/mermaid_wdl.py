@@ -98,7 +98,7 @@ class ParsedWDLToMermaid:
 
         return self.py_mermaid.mermaid_list
 
-    def show_mermaid_flowchart(self, mermaid_list, plot_time=2):
+    def show_mermaid_flowchart(self, mermaid_list, plot_time=2, file_output=False):
         mermaid_str = "\n".join(mermaid_list)
         base64_str = base64.b64encode(mermaid_str.encode("ascii")).decode("ascii")
         img = Image.open(
@@ -107,7 +107,11 @@ class ParsedWDLToMermaid:
         plt.figure(figsize=(15, 9), dpi=100)
         plt.axis("off")
         plt.imshow(img)
-        plt.pause(plot_time)
+        if file_output:
+            output_image = self.output_name.rsplit(".", 1)[0] + ".png"
+            plt.savefig(output_image)
+        else:
+            plt.pause(plot_time)
 
     def output_mermaid(self, mermaid_list):
         with open(self.output_name, "w") as output:
