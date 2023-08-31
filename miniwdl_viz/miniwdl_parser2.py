@@ -8,6 +8,7 @@ class MiniWDLParser2:
 
     def __init__(self, wdl_doc):
         self.wdl_doc = wdl_doc
+        self.workflow_name = ""
         self.nodes = []
         self.edges = []
 
@@ -62,6 +63,8 @@ class MiniWDLParser2:
 
     def parse_workflow(self, wdl_doc, nodes, edges):
         if isinstance(wdl_doc, WDL.Workflow):
+            if not self.workflow_name:
+                self.workflow_name = wdl_doc.name
             self.parse_inputs(wdl_doc.inputs)
             for task in wdl_doc.body:
                 self.parse_workflow(task, nodes, edges)
@@ -135,12 +138,6 @@ class MiniWDLParser2:
 
     def parse(self):
         self.parse_workflow(self.wdl_doc.workflow, self.nodes, self.edges)
-
-        for node in self.nodes:
-            print(node)
-
-        for edge in self.edges:
-            print(edge)
 
 
 def main():

@@ -39,9 +39,18 @@ class PyMermaid:
         self.mermaid_list.append(
             f"{self.create_mm_node(node_from)} {self.create_arrow()} {self.create_arrow_text(edge['task_ref_name'])} {self.create_mm_node(node_to)}"
         )
+    def add_mermaid_edge_id(self, id_from, id_to, edge):
+        self.mermaid_list.append(
+            f"{id_from} {self.create_arrow()} {self.create_arrow_text(edge['task_ref_name'])} {id_to}"
+        )
 
     def add_subgraph(self, id, name, subgraph_nodes):
         self.mermaid_list.append(f"subgraph {MermaidSubgraphNode(id, name)}")
         for subgraph_node in subgraph_nodes:
             self.mermaid_list.append(f"{self.create_mm_node(subgraph_node)}")
         self.mermaid_list.append("end")
+    
+    def add_node(self, node):
+        self.mermaid_list.append(
+            f"{self.create_mm_node(node)}"
+        )

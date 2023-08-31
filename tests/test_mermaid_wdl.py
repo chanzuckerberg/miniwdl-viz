@@ -14,7 +14,7 @@ class TestMermaidWDL:
             suppress_hardcoded_variables=True,
             output_name=output_filename,
         )
-        mermaid_list = mw.create_mermaid_flowchart(simple_wdl.nodes, simple_wdl.edges)
+        mermaid_list = mw.create_mermaid_flowchart(simple_wdl.workflow_name, simple_wdl.nodes, simple_wdl.edges)
         assert (
             mermaid_list[1]
             == 'WorkflowInput(("WorkflowInput")) --> |input_file, docker_image_id| call-add_world{{"add_world"}}'
@@ -39,7 +39,7 @@ class TestMermaidWDL:
             suppress_hardcoded_variables=True,
             output_name=output_filename,
         )
-        mermaid_list = mw.create_mermaid_flowchart(complex_wdl.nodes, complex_wdl.edges)
+        mermaid_list = mw.create_mermaid_flowchart(complex_wdl.workflow_name, complex_wdl.nodes, complex_wdl.edges)
         assert (
             mermaid_list[1]
             == 'subgraph scatter-L120C3-idx["range(length(unpadded_intervals))"]'

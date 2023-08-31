@@ -64,11 +64,10 @@ class ParsedWDLToMermaid:
 
     def add_mermaid_edge(self, nodes, edge):
         node_from = self.get_node(nodes, edge["node_from"])
-        node_to = self.get_node(nodes, edge["node_to"])
         if not self.suppress_node(node_from):
-            self.py_mermaid.add_mermaid_edge(node_from, node_to, edge)
+            self.py_mermaid.add_mermaid_edge_id(edge["node_from"], edge["node_to"], edge)
 
-    def create_subgraphs(self, nodes):
+    def create_subgraphs(self, workflow_name, nodes):
         for node in nodes:
             if node["type"] == "workflow_section":
                 nodes_in_subgraph = [
@@ -77,14 +76,16 @@ class ParsedWDLToMermaid:
                 self.py_mermaid.add_subgraph(
                     node.get("id"), node.get("name"), nodes_in_subgraph
                 )
+            elif node["section"] == workflow_name:
+                self.py_mermaid.add_node(node)
 
-    def create_mermaid_flowchart(self, nodes, edges):
+    def create_mermaid_flowchart(self, workflow_name, nodes, edges):
         if self.group_edges:
             edge_map = self.group_edge(edges)
         else:
             edge_map = edges
 
-        self.create_subgraphs(nodes)
+        self.create_subgraphs(workflow_name, nodes)
 
         for edge in edge_map:
             self.add_mermaid_edge(nodes, edge)
@@ -133,13 +134,13 @@ def main(doc, output_file="output.md"):
 
     mw = ParsedWDLToMermaid(
         flowchart_dir="LR",
-        suppress_workflow_input=len(remaining) > 0,
+        suppress_workflow_input=True, #len(remaining) > 0,
         suppress_hardcoded_variables=True,
         max_input_str_length=50,
-        hide_input_names=False,
+        hide_input_names=True,
         output_name=output_file_md,
     )
-    mermaid_list = mw.create_mermaid_flowchart(parser.nodes, parser.edges)
+    mermaid_list = mw.create_mermaid_flowchart(parser.workflow_name, parser.nodes, parser.edges)
     mw.output_mermaid(mermaid_list)
     mw.create_mermaid_diagram()
 
