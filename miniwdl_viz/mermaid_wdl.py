@@ -1,9 +1,13 @@
 import sys
-import os
 import subprocess
 import WDL
 from miniwdl_viz.py_mermaid import PyMermaid
 from miniwdl_viz.miniwdl_parser2 import MiniWDLParser2
+import requests
+import io
+import base64
+from PIL import Image
+import matplotlib.pyplot as plt
 
 
 class ParsedWDLToMermaid:
@@ -65,7 +69,9 @@ class ParsedWDLToMermaid:
     def add_mermaid_edge(self, nodes, edge):
         node_from = self.get_node(nodes, edge["node_from"])
         if not self.suppress_node(node_from):
-            self.py_mermaid.add_mermaid_edge_id(edge["node_from"], edge["node_to"], edge)
+            self.py_mermaid.add_mermaid_edge_id(
+                edge["node_from"], edge["node_to"], edge
+            )
 
     def create_subgraphs(self, workflow_name, nodes):
         for node in nodes:
@@ -91,6 +97,17 @@ class ParsedWDLToMermaid:
             self.add_mermaid_edge(nodes, edge)
 
         return self.py_mermaid.mermaid_list
+
+    def show_mermaid_flowchart(self, mermaid_list, plot_time=2):
+        mermaid_str = "\n".join(mermaid_list)
+        base64_str = base64.b64encode(mermaid_str.encode("ascii")).decode("ascii")
+        img = Image.open(
+            io.BytesIO(requests.get("https://mermaid.ink/img/" + base64_str).content)
+        )
+        plt.figure(figsize=(15, 9), dpi=100)
+        plt.axis("off")
+        plt.imshow(img)
+        plt.pause(plot_time)
 
     def output_mermaid(self, mermaid_list):
         with open(self.output_name, "w") as output:
@@ -134,15 +151,20 @@ def main(doc, output_file="output.md"):
 
     mw = ParsedWDLToMermaid(
         flowchart_dir="LR",
-        suppress_workflow_input=True, #len(remaining) > 0,
+        suppress_workflow_input=True,  # len(remaining) > 0,
         suppress_hardcoded_variables=True,
         max_input_str_length=50,
         hide_input_names=True,
         output_name=output_file_md,
     )
-    mermaid_list = mw.create_mermaid_flowchart(parser.workflow_name, parser.nodes, parser.edges)
-    mw.output_mermaid(mermaid_list)
-    mw.create_mermaid_diagram()
+    mermaid_list = mw.create_mermaid_flowchart(
+        parser.workflow_name, parser.nodes, parser.edges
+    )
+    mw.show_mermaid_flowchart(mermaid_list=mermaid_list, plot_time=5)
+    mw.py_mermaid.set_node_class("call-RunValidateInput")
+    mw.show_mermaid_flowchart(mermaid_list=mermaid_list, plot_time=5)
+    # mw.output_mermaid(mermaid_list)
+    # mw.create_mermaid_diagram()
 
 
 if __name__ == "__main__":
