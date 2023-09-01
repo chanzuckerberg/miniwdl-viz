@@ -24,7 +24,7 @@ class TestMermaidWDL:
             == 'WorkflowInput --> |docker_image_id| call-add_farewell'
         )
 
-        mw.output_mermaid(mermaid_list)
+        mw.output_mermaid(mermaid_list, file_output=True)
         with open(output_filename, "r") as f:
             file = f.read()
         hash = hashlib.md5(file.encode())
@@ -49,7 +49,7 @@ class TestMermaidWDL:
             == 'WorkflowInput --> |output_prefix, disk_size, docker, gatk_path| call-GatherMetrics'
         )
 
-        mw.output_mermaid(mermaid_list)
+        mw.output_mermaid(mermaid_list, file_output=True)
         with open(output_filename, "r") as f:
             file = f.read()
         hash = hashlib.md5(file.encode())
