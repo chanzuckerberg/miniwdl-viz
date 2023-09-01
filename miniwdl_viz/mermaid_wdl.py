@@ -1,3 +1,4 @@
+import argparse
 import sys
 import subprocess
 import WDL
@@ -11,6 +12,7 @@ import matplotlib.pyplot as plt
 
 
 class ParsedWDLToMermaid:
+    """Takes a parsed WDL and converts it to a mermaid diagram"""
     def __init__(
         self,
         group_edges=True,
@@ -113,64 +115,76 @@ class ParsedWDLToMermaid:
         else:
             plt.pause(plot_time)
 
-    def output_mermaid(self, mermaid_list):
-        with open(self.output_name, "w") as output:
+    def output_mermaid(self, mermaid_list, file_output=False):
+        if file_output:
+            with open(self.output_name, "w") as output:
+                for ind, row in enumerate(mermaid_list):
+                    if ind == 0:
+                        output.write(f"{row}\n")
+                    else:
+                        output.write(f"    {row}\n")
+        else:
             for ind, row in enumerate(mermaid_list):
                 if ind == 0:
-                    output.write(f"{row}\n")
+                    print(f"{row}")
                 else:
-                    output.write(f"    {row}\n")
-
-    def create_mermaid_diagram(self):
-        output_image = self.output_name.rsplit(".", 1)[0] + ".svg"
-
-        # mermaid command. depends on downloading the mermaid-cli
-        command = f"mmdc -i {self.output_name} -o {output_image}"
-
-        try:
-            completed_process = subprocess.run(
-                command,
-                shell=True,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-
-        except subprocess.CalledProcessError as e:
-            print(f"Command execution failed with return code {e.returncode}")
+                    print(f"    {row}")
 
 
-def main(doc, output_file="output.md"):
-    output_file_md = (
-        output_file.lstrip("./").replace("/", "_").rsplit(".", 1)[0] + ".mmd"
-    )
+def parse_wdl(input_file):
+    doc = WDL.load(uri=input_file)
     parser = MiniWDLParser(doc)
     parser.parse()
+    return parser
 
-    # Check if the only nodes remaining are WorkflowInput and HardcodedVariable
-    remaining = set([edge["node_from"] for edge in parser.edges]) - {
-        "WorkflowInput",
-        "HardcodedVariable",
-    }
+def parsed_wdl_to_mermaid(miniwdl_parser, pwm):
+    return pwm.create_mermaid_flowchart(
+        miniwdl_parser.workflow_name, miniwdl_parser.nodes, miniwdl_parser.edges
+    )
 
-    mw = ParsedWDLToMermaid(
-        flowchart_dir="LR",
-        suppress_workflow_input=True,  # len(remaining) > 0,
-        suppress_hardcoded_variables=True,
-        max_input_str_length=50,
-        hide_input_names=True,
-        output_name=output_file_md,
+def main():
+    arg_parser = argparse.ArgumentParser(
+        prog="ParsedWDLToMermaid",
+        description=ParsedWDLToMermaid.__doc__,
     )
-    mermaid_list = mw.create_mermaid_flowchart(
-        parser.workflow_name, parser.nodes, parser.edges
+    arg_parser.add_argument("input")
+    arg_parser.add_argument("-o", "--output-file", default="output.mmd")
+    arg_parser.add_argument("--hide-input_names", action='store_true', default=True, help="hides the input name strings")
+    arg_parser.add_argument("--suppress-workflow-input", action='store_true', default=True, help="suppresses the workflow input node")
+    arg_parser.add_argument("--suppress-hardcoded-variables", action='store_true', default=True, help="suppresses hardcoded variable node")
+    arg_parser.add_argument("--flowchart-dir", choices=["TD", "LR"], default="LR", help="direction of the flow chart, TD (top down) or LR (left right)")
+    arg_parser.add_argument("--max_input_str_length", type=int, default=200, help="if input names aren't hidden sets a max length for them")
+
+    arg_parser.add_argument("--plot-flowchart", action='store_true', default=False, help="plot flowchart with matplotlib")
+    arg_parser.add_argument("--plot-flowchart-file-output", action='store_true', default=False, help="plot outputs flowchart as a png file")
+    arg_parser.add_argument("--plot-time", type=int, default=10, help="time to plot flowchart flow default:10")
+
+    arg_parser.add_argument("--print-flowchart", action='store_true', default=False, help="print flowchart to console")
+    arg_parser.add_argument("--print-flowchart-file-output", action='store_true', default=False, help="print flowchart to file output_file")
+
+
+
+    args = arg_parser.parse_args()
+
+    if args.input.endswith(".wdl"):
+        miniwdl_parser = parse_wdl(args.input)
+
+    pwm = ParsedWDLToMermaid(
+        flowchart_dir=args.flowchart_dir,
+        suppress_workflow_input=args.suppress_workflow_input, 
+        suppress_hardcoded_variables=args.suppress_hardcoded_variables,
+        max_input_str_length=args.max_input_str_length,
+        hide_input_names=args.hide_input_names,
+        output_name=args.output_file,
     )
-    mw.py_mermaid.set_node_class("call-RunValidateInput")
-    mw.show_mermaid_flowchart(mermaid_list=mermaid_list, plot_time=5)
-    # mw.output_mermaid(mermaid_list)
-    # mw.create_mermaid_diagram()
+    mermaid_list = parsed_wdl_to_mermaid(miniwdl_parser, pwm)
+
+    if args.plot_flowchart:
+        pwm.show_mermaid_flowchart(mermaid_list=mermaid_list, plot_time=args.plot_time, file_output=args.plot_flowchart_file_output)
+    
+    if args.print_flowchart:
+        pwm.output_mermaid(mermaid_list=mermaid_list, file_output=args.print_flowchart_file_output)
 
 
 if __name__ == "__main__":
-    input_file = sys.argv[1]
-    doc = WDL.load(uri=input_file)
-    main(doc, input_file)
+    main()
