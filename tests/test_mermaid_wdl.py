@@ -16,7 +16,7 @@ class TestMermaidWDL:
         )
         mermaid_list = mw.create_mermaid_flowchart(simple_wdl.workflow_name, simple_wdl.nodes, simple_wdl.edges)
         assert (
-            mermaid_list[1]
+            mermaid_list[2]
             == 'call-add_world{{"add_world"}}'
         )
         assert (
@@ -28,7 +28,7 @@ class TestMermaidWDL:
         with open(output_filename, "r") as f:
             file = f.read()
         hash = hashlib.md5(file.encode())
-        assert hash.hexdigest() == "a242eae2f3dcf7c5f65610fafdbcf306"
+        assert hash.hexdigest() == "44cf79474b999a56e9c718aa33b82866"
         os.remove(output_filename)
 
     def test_complex_mermaid_wdl(self, complex_wdl):
@@ -41,7 +41,7 @@ class TestMermaidWDL:
         )
         mermaid_list = mw.create_mermaid_flowchart(complex_wdl.workflow_name, complex_wdl.nodes, complex_wdl.edges)
         assert (
-            mermaid_list[1]
+            mermaid_list[2]
             == 'call-DynamicallyCombineIntervals{{"DynamicallyCombineIntervals"}}'
         )
         assert (
@@ -53,5 +53,5 @@ class TestMermaidWDL:
         with open(output_filename, "r") as f:
             file = f.read()
         hash = hashlib.md5(file.encode())
-        assert hash.hexdigest() == "67e6954ef9e416431b197b7428ce1a1a"
+        assert hash.hexdigest() == "9c7ee82d6bb52a761ed881683dea444a"
         os.remove(output_filename)

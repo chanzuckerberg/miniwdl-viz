@@ -2,7 +2,7 @@ import sys
 import subprocess
 import WDL
 from miniwdl_viz.py_mermaid import PyMermaid
-from miniwdl_viz.miniwdl_parser2 import MiniWDLParser2
+from miniwdl_viz.miniwdl_parser import MiniWDLParser
 import requests
 import io
 import base64
@@ -144,7 +144,7 @@ def main(doc, output_file="output.md"):
     output_file_md = (
         output_file.lstrip("./").replace("/", "_").rsplit(".", 1)[0] + ".mmd"
     )
-    parser = MiniWDLParser2(doc)
+    parser = MiniWDLParser(doc)
     parser.parse()
 
     # Check if the only nodes remaining are WorkflowInput and HardcodedVariable
@@ -164,7 +164,6 @@ def main(doc, output_file="output.md"):
     mermaid_list = mw.create_mermaid_flowchart(
         parser.workflow_name, parser.nodes, parser.edges
     )
-    mw.show_mermaid_flowchart(mermaid_list=mermaid_list, plot_time=5)
     mw.py_mermaid.set_node_class("call-RunValidateInput")
     mw.show_mermaid_flowchart(mermaid_list=mermaid_list, plot_time=5)
     # mw.output_mermaid(mermaid_list)
