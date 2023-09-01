@@ -1,4 +1,4 @@
-from miniwdl_viz.miniwdl_parser2 import MiniWDLParser2
+from miniwdl_viz.miniwdl_parser import MiniWDLParser
 from os.path import dirname, realpath, join
 import WDL
 import pytest
@@ -7,7 +7,7 @@ import pytest
 @pytest.fixture
 def simple_wdl():
     doc = WDL.load(join(dirname(realpath(__file__)), "test_wdls", "simple.wdl"))
-    parser = MiniWDLParser2(doc)
+    parser = MiniWDLParser(doc)
     parser.parse()
     return parser
 
@@ -21,7 +21,7 @@ def complex_wdl():
             "joint-discovery-gatk4-version.wdl",
         )
     )
-    parser = MiniWDLParser2(doc)
+    parser = MiniWDLParser(doc)
     parser.parse()
     return parser
 
