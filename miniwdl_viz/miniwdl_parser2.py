@@ -187,7 +187,8 @@ def main():
 
     out_type = "json" if args.json_output else "yaml"
     filename = args.output_file if args.output_file else Path(args.input_wdl).stem 
-    write_output(filename, out_type, parser.to_dict())
+    filepath = str(Path(args.output_dir)/filename) if args.output_dir else filename
+    write_output(filepath, out_type, parser.to_dict())
     
 
 if __name__ == "__main__":
