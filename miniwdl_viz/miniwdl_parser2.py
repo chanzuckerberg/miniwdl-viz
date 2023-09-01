@@ -172,7 +172,7 @@ def write_output(filename, out_type, dict):
 def main():
     arg_parser = argparse.ArgumentParser(
         prog="MiniWDLParser",
-        description="Parses a miniwdl file into inputs, outputs, nodes, and edges",
+        description=MiniWDLParser2.__doc__,
     )
     arg_parser.add_argument("input_wdl")
     arg_parser.add_argument("-d", "--output-dir")
