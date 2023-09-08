@@ -20,11 +20,13 @@ setup(
     install_requires=[
         "requests",
         "pillow", 
-        "matplotlib"
+        "matplotlib",
         "miniwdl",
     ],
     entry_points={
-        "console_scripts": ["miniwdl_parser = miniwdl_viz.miniwdl_parser2:main"],
+        "console_scripts": ["miniwdl_parser = miniwdl_viz.miniwdl_parser:main", 
+                            "wdl_to_mermaid = miniwdl_viz.mermaid_wdl:main"
+                            ],
     },
     packages=["miniwdl_viz"],
 )
