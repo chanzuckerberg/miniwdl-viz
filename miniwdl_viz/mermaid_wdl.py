@@ -149,9 +149,9 @@ def main():
     )
     arg_parser.add_argument("input")
     arg_parser.add_argument("-o", "--output-file", default="output.mmd")
-    arg_parser.add_argument("--hide-input_names", action='store_true', default=True, help="hides the input name strings")
-    arg_parser.add_argument("--suppress-workflow-input", action='store_true', default=True, help="suppresses the workflow input node")
-    arg_parser.add_argument("--suppress-hardcoded-variables", action='store_true', default=True, help="suppresses hardcoded variable node")
+    arg_parser.add_argument("--show-input-names", action='store_true', default=False, help="hides the input name strings")
+    arg_parser.add_argument("--show-workflow-input", action='store_true', default=False, help="suppresses the workflow input node")
+    arg_parser.add_argument("--show-hardcoded-variables", action='store_true', default=False, help="suppresses hardcoded variable node")
     arg_parser.add_argument("--flowchart-dir", choices=["TD", "LR"], default="LR", help="direction of the flow chart, TD (top down) or LR (left right)")
     arg_parser.add_argument("--max_input_str_length", type=int, default=200, help="if input names aren't hidden sets a max length for them")
 
@@ -171,10 +171,10 @@ def main():
 
     pwm = ParsedWDLToMermaid(
         flowchart_dir=args.flowchart_dir,
-        suppress_workflow_input=args.suppress_workflow_input, 
-        suppress_hardcoded_variables=args.suppress_hardcoded_variables,
+        suppress_workflow_input=(not args.show_workflow_input), 
+        suppress_hardcoded_variables=(not args.show_hardcoded_variables),
         max_input_str_length=args.max_input_str_length,
-        hide_input_names=args.hide_input_names,
+        hide_input_names=(not args.show_input_names),
         output_name=args.output_file,
     )
     mermaid_list = parsed_wdl_to_mermaid(miniwdl_parser, pwm)
