@@ -80,7 +80,7 @@ flowchart LR
 ```
 
 ### Complex
-This was generated with the command: ```wdl_to_mermaid wdl/phylotree-ng/run.wdl --print-flowchart```
+This was generated with the command: ```wdl_to_mermaid wdl/complex-miniwdl/joint-discovery-gatk4-local.wdl --print-flowchart```
 ```mermaid 
 flowchart TD
     classDef done fill:#f96
