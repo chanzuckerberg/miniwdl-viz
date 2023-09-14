@@ -14,20 +14,28 @@ class MiniWDLParser:
         self.workflow_name = ""
         self.nodes = []
         self.edges = []
-        self.inputs = {}
-        self.outputs = {}
+        self.inputs = []
+        self.outputs = []
 
     def parse_inputs(self, inputs):
         if inputs is None: 
             return
         for input in inputs:
-            self.inputs[input.name] = str(input.type)
+            self.inputs.append({
+                "name": input.name, 
+                "workflow_data_type": str(input.type),
+                "description": ""
+            })
 
     def parse_outputs(self, outputs):
         if outputs is None:
             return
         for output in outputs:
-            self.outputs[output.name] = str(output.type)
+            self.outputs.append({
+                "name": output.name, 
+                "workflow_data_type": str(output.type),
+                "description": ""
+            })
 
     def get_referee_name(self, referee):
         if isinstance(referee, WDL.Gather):
@@ -148,10 +156,20 @@ class MiniWDLParser:
 
     def to_dict(self):
         return {
-            "inputs": self.inputs,
-            "outputs": self.outputs,
+            "name": self.workflow_name, 
+            "version": "0.0.1", # default version
+            "type": "WDL",
+            "deprecated": False, 
+            "description": "",
+            "workflow_inputs": self.inputs,
+            "workflow_outputs": self.outputs,
             "nodes": self.nodes,
-            "edges": self.edges
+            "edges": self.edges,
+            ### Fill in manually ### 
+            "input_loaders": [],
+            "output_loaders": [],
+            "entity_inputs": [],
+            "entity_outputs": []
         }
 
 def write_output(filename, out_type, dict):
